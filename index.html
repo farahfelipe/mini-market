@@ -69,7 +69,7 @@
     <div class="modal-conteudo">
       <h2>Pagamento PIX</h2>
       <div id="valorPix" style="font-size:28px; font-weight:bold; margin:10px 0; color:#00bfa5;"></div>
-      <img id="qrPix" style="width:200px; height:200px; margin:10px auto; display:block;" />
+      <img id="qrPix" style="width:200px; height:200px; margin:10px auto; display:block; border: 1px solid #eee;" />
       <button id="btnConfirmarPix" class="btn pix" style="width:100%; margin-top:10px;">CONFIRMAR</button>
       <button id="btnFecharPix" class="btn cancelar" style="width:100%; margin-top:10px;">VOLTAR</button>
     </div>
@@ -272,9 +272,12 @@
       if (!itens.length) return;
       const total = itens.reduce((a, b) => a + (b.preco * b.qtd), 0);
       document.getElementById("valorPix").innerText = "R$ " + total.toFixed(2);
-      // CORREÇÃO AQUI: Garantindo que o payload seja passado corretamente para o QR Code
-      const pixData = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
-      document.getElementById("qrPix").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(pixData);
+      
+      // GERAÇÃO DO PAYLOAD E ATUALIZAÇÃO DA IMAGEM
+      const pixData = gerarPayloadPix(PIX_CHAVE.trim(), PIX_NOME.trim(), PIX_CIDADE.trim(), total);
+      const urlFinal = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(pixData);
+      
+      document.getElementById("qrPix").src = urlFinal;
       document.getElementById("modalPix").classList.remove("hidden");
     };
 
