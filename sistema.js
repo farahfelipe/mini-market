@@ -99,7 +99,11 @@ function resetarParaInicio() {
     modalPix.classList.add("hidden");
     sistemaIniciado = false;
     codigoInput.value = "";
+
+    const pixChaveBox = document.getElementById("pixChaveBox");
+    if (pixChaveBox) pixChaveBox.classList.add("hidden");
 }
+
 
 function configurarEventos() {
     // LEITURA COM LIMPEZA DE CARACTERES OCULTOS E DELAY DE 100ms
@@ -167,14 +171,38 @@ function configurarEventos() {
 
     document.getElementById("btnPix").onclick = () => {
         if (itens.length === 0) return;
+    
         const total = itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
         valorPix.textContent = `R$ ${total.toFixed(2)}`;
+    
+        const aviso = document.getElementById("avisoPix");
+        aviso.classList.add("hidden");
+    
+        // >>> ADICIONE ISTO <<<
+        const pixChaveBox = document.getElementById("pixChaveBox");
+        if (pixChaveBox) pixChaveBox.classList.remove("hidden");
+        // >>> FIM <<<
+    
         const payload = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
-        qrPix.src = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(payload);
+        const url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(payload);
+    
+        qrPix.onload = () => {
+            aviso.innerHTML = textoAvisoPix();
+            aviso.classList.remove("hidden");
+        };
+    
+        qrPix.src = url;
         modalPix.classList.remove("hidden");
     };
+    
 
-    document.getElementById("btnFecharPix").onclick = () => modalPix.classList.add("hidden");
+    document.getElementById("btnFecharPix").onclick = () => {
+        modalPix.classList.add("hidden");
+    
+        const pixChaveBox = document.getElementById("pixChaveBox");
+        if (pixChaveBox) pixChaveBox.classList.add("hidden");
+    };
+    
 
     document.getElementById("btnConfirmarPix").onclick = () => {
         const totalVenda = itens.reduce((s, i) => s + i.preco * i.qtd, 0);
@@ -191,6 +219,8 @@ function configurarEventos() {
             alert("Venda Confirmada!");
         }
         resetarParaInicio();
+        const pixChaveBox = document.getElementById("pixChaveBox");
+if (pixChaveBox) pixChaveBox.classList.add("hidden");
     };
 
     btnExportar.onclick = () => {
@@ -340,3 +370,22 @@ function exportarVendas() {
     a.download = 'relatorio_vendas.csv';
     a.click();
 }
+
+function textoAvisoPix() {
+    const hora = new Date().getHours();
+
+    if (hora >= 18 || hora < 6) {
+        return `
+            ⚠️ <strong>Boa noite!</strong><br>
+            Após realizar o pagamento via PIX,
+            toque em <strong>Pagamento Confirmado</strong>
+            para finalizar sua compra.
+        `;
+    } else {
+        return `
+            ⚠️ <strong>Atenção!</strong><br>
+            Após ler o QR Code e efetuar o pagamento,
+            toque em <strong>Pagamento Confirmado</strong>.
+        `;
+    }
+}    
