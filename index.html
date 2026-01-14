@@ -38,6 +38,25 @@
     .stats-row { display: flex; justify-content: space-around; background: #f0f0f0; padding: 12px; border-radius: 10px; }
     .stats-item { flex: 1; font-size: 14px; }
     .stats-item b { font-size: 16px; display: block; margin-top: 4px; }
+
+    /* ESTILO AVISO PIX */
+    .aviso-pix {
+      margin: 12px 0 10px 0;
+      padding: 12px;
+      background: #f0fffc;
+      border: 2px solid #00bfa5;
+      border-radius: 12px;
+      font-size: 15px;
+      color: #00695c;
+      text-align: center;
+      line-height: 1.4;
+      animation: piscarSuave 1.6s infinite;
+    }
+    @keyframes piscarSuave {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -69,30 +88,20 @@
     <div class="modal-conteudo">
       <h2>Pagamento PIX</h2>
       <div id="valorPix" style="font-size:28px; font-weight:bold; margin:10px 0; color:#00bfa5;"></div>
+      
       <img id="qrPix" style="width:200px; height:200px; margin:10px auto; display:block; border: 1px solid #eee;" />
       
-      <div id="pixChaveBox" class="pix-chave hidden">
+      <div id="pixChaveBox" class="hidden">
         <p style="margin: 10px 0 5px 0; font-size: 14px; color:#555;">
           Ou pague pela chave PIX:
         </p>
-      
-        <div style="
-          font-weight: bold;
-          font-size: 15px;
-          color: #00695c;
-          background: #f0fffc;
-          border: 1px dashed #00bfa5;
-          border-radius: 10px;
-          padding: 10px;
-          word-break: break-all;
-        ">
+        <div style="font-weight: bold; font-size: 15px; color: #00695c; background: #f0fffc; border: 1px dashed #00bfa5; border-radius: 10px; padding: 10px; word-break: break-all;">
           farahfelipe@gmail.com
         </div>
       </div>
-      
-
 
       <div id="avisoPix" class="aviso-pix hidden"></div>
+
       <button id="btnConfirmarPix" class="btn pix" style="width:100%; margin-top:10px;">CONFIRMAR PAGAMENTO</button>
       <button id="btnFecharPix" class="btn cancelar" style="width:100%; margin-top:10px;">VOLTAR</button>
     </div>
@@ -291,11 +300,27 @@
 
     document.getElementById("btnCancelar").onclick = () => { if(confirm("Cancelar?")) resetSistema(); };
 
+    // INSERÇÃO: Função para o aviso de horário
+    function textoAvisoPix() {
+      const hora = new Date().getHours();
+      if (hora >= 18 || hora < 6) {
+        return `⚠️ <strong>Boa noite!</strong><br>Após pagar via PIX, toque em <strong>CONFIRMAR PAGAMENTO</strong>.`;
+      } else {
+        return `⚠️ <strong>Atenção!</strong><br>Após pagar via PIX, toque em <strong>CONFIRMAR PAGAMENTO</strong>.`;
+      }
+    }
+
     document.getElementById("btnPix").onclick = () => {
       if (!itens.length) return;
       const total = itens.reduce((a, b) => a + (b.preco * b.qtd), 0);
       document.getElementById("valorPix").innerText = "R$ " + total.toFixed(2);
       
+      // MOSTRAR AVISO E CHAVE
+      const aviso = document.getElementById("avisoPix");
+      aviso.innerHTML = textoAvisoPix();
+      aviso.classList.remove("hidden");
+      document.getElementById("pixChaveBox").classList.remove("hidden");
+
       // GERAÇÃO DO PAYLOAD E ATUALIZAÇÃO DA IMAGEM
       const pixData = gerarPayloadPix(PIX_CHAVE.trim(), PIX_NOME.trim(), PIX_CIDADE.trim(), total);
       const urlFinal = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(pixData);

@@ -24,11 +24,12 @@ let btnExportar, btnImportar, fileInput, vendasHojeEl, vendasMesEl, btnLimparVen
 
 // ===== INICIALIZAÇÃO SEGURA =====
 document.addEventListener("DOMContentLoaded", () => {
+    // Captura dos elementos do HTML
     telaInicial = document.getElementById("telaInicial");
     btnIniciar = document.getElementById("btnIniciar");
     logoAdmin = document.getElementById("logoAdmin");
-    cabecalho = document.querySelector(".topo");
-    conteudoPrincipal = document.querySelector(".conteudo");
+    cabecalho = document.getElementById("cabecalho");
+    conteudoPrincipal = document.getElementById("conteudoPrincipal");
     codigoInput = document.getElementById("codigo");
     listaItens = document.getElementById("listaItens");
     totalEl = document.getElementById("total");
@@ -36,19 +37,23 @@ document.addEventListener("DOMContentLoaded", () => {
     modalPix = document.getElementById("modalPix");
     valorPix = document.getElementById("valorPix");
     qrPix = document.getElementById("qrPix");
-    modalCadastro = document.getElementById("modalCadastro");
+    
+    // Mapeamento para os IDs do seu HTML
+    modalCadastro = document.getElementById("modalAdmin"); 
     cadCodigo = document.getElementById("cadCodigo");
     cadNome = document.getElementById("cadNome");
     cadPreco = document.getElementById("cadPreco");
     btnSalvarProd = document.getElementById("btnSalvarProd");
-    btnFecharCad = document.getElementById("btnFecharCad");
-    btnExportar = document.getElementById("btnExportar");
-    btnImportar = document.getElementById("btnImportar");
-    fileInput = document.getElementById("fileInput");
+    btnFecharCad = document.getElementById("btnFecharAdmin"); 
+    
+    btnExportar = document.getElementById("btnExportarCsv"); 
+    btnImportar = document.getElementById("btnImportarCsv");
+    fileInput = document.getElementById("arquivoCsv"); 
+    
     vendasHojeEl = document.getElementById("vendasHoje");
     vendasMesEl = document.getElementById("vendasMes");
-    btnLimparVendas = document.getElementById("btnLimparVendas");
-    btnExportarExcel = document.getElementById("btnExportarExcel");
+    
+    btnExportarExcel = document.getElementById("btnExportarCsv");
     btnCancelar = document.getElementById("btnCancelar");
 
     const iniciarFunc = (e) => {
@@ -104,9 +109,7 @@ function resetarParaInicio() {
     if (pixChaveBox) pixChaveBox.classList.add("hidden");
 }
 
-
 function configurarEventos() {
-    // LEITURA COM LIMPEZA DE CARACTERES OCULTOS E DELAY DE 100ms
     codigoInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
@@ -156,7 +159,6 @@ function configurarEventos() {
         const cod = cadCodigo.value.trim().replace(/[^a-zA-Z0-9]/g, "");
         const nome = cadNome.value.trim();
         const precoVenda = parseFloat(cadPreco.value);
-        // Pergunta o custo opcionalmente ao salvar manual
         const precoCusto = parseFloat(prompt("Informe o Preço de Custo (ou deixe 0):", "0")) || 0;
 
         if (cod && nome && !isNaN(precoVenda)) {
@@ -176,37 +178,31 @@ function configurarEventos() {
         valorPix.textContent = `R$ ${total.toFixed(2)}`;
     
         const aviso = document.getElementById("avisoPix");
-        aviso.classList.add("hidden");
-    
-        // >>> ADICIONE ISTO <<<
         const pixChaveBox = document.getElementById("pixChaveBox");
+        
         if (pixChaveBox) pixChaveBox.classList.remove("hidden");
-        // >>> FIM <<<
     
         const payload = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
         const url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(payload);
     
-        qrPix.onload = () => {
+        qrPix.src = url;
+
+        if (aviso) {
             aviso.innerHTML = textoAvisoPix();
             aviso.classList.remove("hidden");
-        };
-    
-        qrPix.src = url;
+        }
+
         modalPix.classList.remove("hidden");
     };
-    
 
     document.getElementById("btnFecharPix").onclick = () => {
         modalPix.classList.add("hidden");
-    
         const pixChaveBox = document.getElementById("pixChaveBox");
         if (pixChaveBox) pixChaveBox.classList.add("hidden");
     };
-    
 
     document.getElementById("btnConfirmarPix").onclick = () => {
         const totalVenda = itens.reduce((s, i) => s + i.preco * i.qtd, 0);
-        // Calcula o custo total da venda para armazenar o lucro
         const totalCusto = itens.reduce((s, i) => s + (i.custo || 0) * i.qtd, 0);
 
         if(totalVenda > 0) {
@@ -219,20 +215,10 @@ function configurarEventos() {
             alert("Venda Confirmada!");
         }
         resetarParaInicio();
-        const pixChaveBox = document.getElementById("pixChaveBox");
-if (pixChaveBox) pixChaveBox.classList.add("hidden");
     };
 
-    btnExportar.onclick = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(produtos));
-        const a = document.createElement('a');
-        a.setAttribute("href", dataStr);
-        a.setAttribute("download", "produtos_market.json");
-        a.click();
-    };
-
-    // ===== IMPORTADOR ULTRA-RESISTENTE COM SUPORTE A CUSTO (4ª COLUNA) =====
     btnImportar.onclick = () => fileInput.click();
+    
     fileInput.onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -240,38 +226,27 @@ if (pixChaveBox) pixChaveBox.classList.add("hidden");
         reader.onload = (event) => {
             const conteudo = event.target.result;
             try {
-                if (file.name.toLowerCase().endsWith('.csv')) {
-                    const linhas = conteudo.split(/\r?\n/);
-                    let importados = 0;
-                    linhas.forEach((linha, index) => {
-                        // Ignora o cabeçalho
-                        if (index === 0 || !linha.trim()) return;
-                        
-                        let col = [];
-                        if (linha.includes(";")) col = linha.split(";");
-                        else if (linha.includes(",")) col = linha.split(",");
-                        else col = linha.split("\t");
+                const linhas = conteudo.split(/\r?\n/);
+                let importados = 0;
+                linhas.forEach((linha, index) => {
+                    if (index === 0 || !linha.trim()) return;
+                    let col = linha.split(";");
+                    if (col.length < 3) col = linha.split(",");
+                    
+                    if (col.length >= 3) {
+                        const cod = col[0].trim().replace(/[^a-zA-Z0-9]/g, "");
+                        const nome = col[1].trim();
+                        const precoVenda = parseFloat(col[2].trim().replace(",", "."));
+                        const precoCusto = col[3] ? parseFloat(col[3].trim().replace(",", ".")) : 0;
 
-                        if (col.length >= 3) {
-                            const cod = col[0].trim().replace(/[^a-zA-Z0-9]/g, "");
-                            const nome = col[1].trim();
-                            
-                            // CORREÇÃO AQUI: 3ª Coluna (índice 2) é Venda, 4ª Coluna (índice 3) é Custo
-                            const precoVenda = parseFloat(col[2].trim().replace(",", "."));
-                            const precoCusto = col[3] ? parseFloat(col[3].trim().replace(",", ".")) : 0;
-
-                            if (cod && !isNaN(precoVenda)) {
-                                produtos[cod] = { nome, preco: precoVenda, custo: precoCusto };
-                                importados++;
-                            }
+                        if (cod && !isNaN(precoVenda)) {
+                            produtos[cod] = { nome, preco: precoVenda, custo: precoCusto };
+                            importados++;
                         }
-                    });
-                    alert(importados + " produtos importados!");
-                } else {
-                    produtos = JSON.parse(conteudo);
-                    alert("Produtos JSON importados!");
-                }
+                    }
+                });
                 localStorage.setItem("market_produtos", JSON.stringify(produtos));
+                alert(importados + " produtos importados!");
                 location.reload();
             } catch(err) { alert("Erro na importação: " + err.message); }
         };
@@ -279,14 +254,6 @@ if (pixChaveBox) pixChaveBox.classList.add("hidden");
     };
 
     btnExportarExcel.onclick = exportarVendas;
-
-    btnLimparVendas.onclick = () => {
-        if(confirm("Deseja ZERAR todo o histórico de vendas?")) {
-            historicoVendas = [];
-            localStorage.setItem("market_vendas", "[]");
-            atualizarInterfaceRelatorio();
-        }
-    };
 }
 
 function render() {
@@ -298,11 +265,11 @@ function render() {
         div.className = "item";
         div.innerHTML = `
             <div class="item-topo"><span>${item.nome}</span><span>R$ ${(item.preco * item.qtd).toFixed(2)}</span></div>
-            <div class="controles">
-                <button onclick="alterarQtd(${i}, -1)">−</button>
+            <div class="controles" style="margin-top:5px;">
+                <button onclick="alterarQtd(${i}, -1)" style="padding:5px 10px;">−</button>
                 <strong style="margin: 0 10px">${item.qtd}</strong>
-                <button onclick="alterarQtd(${i}, 1)">+</button>
-                <span class="remover" style="cursor:pointer; margin-left:15px;" onclick="removerItem(${i})">🗑️</span>
+                <button onclick="alterarQtd(${i}, 1)" style="padding:5px 10px;">+</button>
+                <span style="cursor:pointer; margin-left:15px;" onclick="removerItem(${i})">🗑️</span>
             </div>`;
         listaItens.appendChild(div);
     });
@@ -316,7 +283,7 @@ window.alterarQtd = (i, d) => {
 };
 
 window.removerItem = i => {
-    if (confirm("Deseja remover este item da lista?")) {
+    if (confirm("Deseja remover este item?")) {
         itens.splice(i, 1);
         render();
     }
@@ -345,17 +312,23 @@ function crc16(data) {
 function atualizarInterfaceRelatorio() {
     const hoje = new Date().toLocaleDateString('pt-BR');
     const vendasHoje = historicoVendas.filter(v => new Date(v.data).toLocaleDateString('pt-BR') === hoje);
-    
     const totalHoje = vendasHoje.reduce((a, b) => a + b.valor, 0);
     const lucroHoje = vendasHoje.reduce((a, b) => a + (b.lucro || 0), 0);
 
     if(vendasHojeEl) {
-        vendasHojeEl.innerHTML = `Vendas Hoje: R$ ${totalHoje.toFixed(2)}<br><small style="color: #2ecc71">Lucro Est.: R$ ${lucroHoje.toFixed(2)}</small>`;
+        vendasHojeEl.innerHTML = `R$ ${totalHoje.toFixed(2)}`;
     }
-    
+    const lucroEl = document.getElementById("lucroHoje");
+    if(lucroEl) lucroEl.innerText = `R$ ${lucroHoje.toFixed(2)}`;
+
     const mesAtual = new Date().getMonth();
-    const totalMes = historicoVendas.filter(v => new Date(v.data).getMonth() === mesAtual).reduce((a, b) => a + b.valor, 0);
-    if(vendasMesEl) vendasMesEl.textContent = `Total Mês: R$ ${totalMes.toFixed(2)}`;
+    const vendasMes = historicoVendas.filter(v => new Date(v.data).getMonth() === mesAtual);
+    const totalMes = vendasMes.reduce((a, b) => a + b.valor, 0);
+    const lucroMes = vendasMes.reduce((a, b) => a + (b.lucro || 0), 0);
+
+    if(vendasMesEl) vendasMesEl.innerText = `R$ ${totalMes.toFixed(2)}`;
+    const lucroMesEl = document.getElementById("lucroMes");
+    if(lucroMesEl) lucroMesEl.innerText = `R$ ${lucroMes.toFixed(2)}`;
 }
 
 function exportarVendas() {
@@ -373,19 +346,9 @@ function exportarVendas() {
 
 function textoAvisoPix() {
     const hora = new Date().getHours();
-
     if (hora >= 18 || hora < 6) {
-        return `
-            ⚠️ <strong>Boa noite!</strong><br>
-            Após realizar o pagamento via PIX,
-            toque em <strong>CONFIRMAR PAGAMENTO</strong>
-            para finalizar sua compra.
-        `;
+        return `⚠️ <strong>Boa noite!</strong><br>Após pagar via PIX, toque em <strong>CONFIRMAR PAGAMENTO</strong>.`;
     } else {
-        return `
-             ⚠️ <strong>Atenção!</strong><br>
-        Após ler o QR Code e efetuar o pagamento,
-        toque em <strong>CONFIRMAR PAGAMENTO</strong>.
-        `;
+        return `⚠️ <strong>Atenção!</strong><br>Após pagar via PIX, toque em <strong>CONFIRMAR PAGAMENTO</strong>.`;
     }
-}    
+}
