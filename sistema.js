@@ -186,13 +186,10 @@ function configurarEventos() {
         const payload = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
         const url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(payload);
     
-        qrPix.onload = null;
-
-setTimeout(() => {
-    aviso.innerHTML = textoAvisoPix();
-    aviso.classList.remove("hidden");
-}, 300);
-
+        qrPix.onload = () => {
+            aviso.innerHTML = textoAvisoPix();
+            aviso.classList.remove("hidden");
+        };
     
         qrPix.src = url;
         modalPix.classList.remove("hidden");
