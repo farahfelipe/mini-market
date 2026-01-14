@@ -185,7 +185,6 @@
           const col = linha.split(";");
           if (col.length >= 4) {
             const cod = col[0].trim();
-            // AJUSTE REALIZADO: Coluna C (índice 2) = Preço de Venda | Coluna D (índice 3) = Preço de Custo
             produtos[cod] = { 
               nome: col[1].trim(), 
               preco: parseFloat(col[2].replace(",", ".")), 
@@ -203,13 +202,11 @@
 
     document.getElementById("btnFecharAdmin").onclick = () => document.getElementById("modalAdmin").classList.add("hidden");
 
-    // --- PDV E VENDAS (AJUSTE DE DELAY PARA WINDOWS) ---
     const inputCodigo = document.getElementById("codigo");
 
     inputCodigo.addEventListener("keydown", function(e) {
       if (e.keyCode === 13) { 
         e.preventDefault(); 
-        // Espera 50ms para garantir que o Windows terminou de preencher o input
         setTimeout(() => {
           const cod = this.value.trim();
           if (cod) {
@@ -262,7 +259,6 @@
       renderizar();
     };
 
-    // NOVA FUNÇÃO: Remover item diretamente pela lixeira
     window.removerItem = (i) => {
       if (confirm("Deseja remover este item?")) {
         itens.splice(i, 1);
@@ -276,8 +272,9 @@
       if (!itens.length) return;
       const total = itens.reduce((a, b) => a + (b.preco * b.qtd), 0);
       document.getElementById("valorPix").innerText = "R$ " + total.toFixed(2);
-      const payload = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
-      document.getElementById("qrPix").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(payload);
+      // CORREÇÃO AQUI: Garantindo que o payload seja passado corretamente para o QR Code
+      const pixData = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
+      document.getElementById("qrPix").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(pixData);
       document.getElementById("modalPix").classList.remove("hidden");
     };
 
