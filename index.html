@@ -185,10 +185,11 @@
           const col = linha.split(";");
           if (col.length >= 4) {
             const cod = col[0].trim();
+            // AJUSTE REALIZADO: Coluna C (índice 2) = Preço de Venda | Coluna D (índice 3) = Preço de Custo
             produtos[cod] = { 
               nome: col[1].trim(), 
-              custo: parseFloat(col[2].replace(",", ".")), 
-              preco: parseFloat(col[3].replace(",", ".")) 
+              preco: parseFloat(col[2].replace(",", ".")), 
+              custo: parseFloat(col[3].replace(",", ".")) 
             };
             count++;
           }
@@ -246,7 +247,10 @@
         lista.innerHTML += `
           <div class="item">
             <div class="item-topo"><span>${item.nome}</span><span>R$ ${(item.preco*item.qtd).toFixed(2)}</span></div>
-            <button onclick="alterar(${idx},-1)">-</button> ${item.qtd} <button onclick="alterar(${idx},1)">+</button>
+            <button onclick="alterar(${idx},-1)">-</button> 
+            ${item.qtd} 
+            <button onclick="alterar(${idx},1)">+</button>
+            <span style="cursor:pointer; margin-left:15px; font-size:20px;" onclick="removerItem(${idx})">🗑️</span>
           </div>`;
       });
       document.getElementById("total").innerText = "R$ " + total.toFixed(2);
@@ -256,6 +260,14 @@
       itens[i].qtd += d;
       if (itens[i].qtd <= 0) itens.splice(i, 1);
       renderizar();
+    };
+
+    // NOVA FUNÇÃO: Remover item diretamente pela lixeira
+    window.removerItem = (i) => {
+      if (confirm("Deseja remover este item?")) {
+        itens.splice(i, 1);
+        renderizar();
+      }
     };
 
     document.getElementById("btnCancelar").onclick = () => { if(confirm("Cancelar?")) resetSistema(); };
