@@ -378,14 +378,14 @@ function textoAvisoPix() {
         return `
             ⚠️ <strong>Boa noite!</strong><br>
             Após realizar o pagamento via PIX,
-            toque em <strong>Pagamento Confirmado</strong>
+            toque em <strong>CONFIRMAR PAGAMENTO</strong>
             para finalizar sua compra.
         `;
     } else {
         return `
-            ⚠️ <strong>Atenção!</strong><br>
-            Após ler o QR Code e efetuar o pagamento,
-            toque em <strong>Pagamento Confirmado</strong>.
+             ⚠️ <strong>Atenção!</strong><br>
+        Após ler o QR Code e efetuar o pagamento,
+        toque em <strong>CONFIRMAR PAGAMENTO</strong>.
         `;
     }
 }    

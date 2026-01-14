@@ -71,18 +71,29 @@
       <div id="valorPix" style="font-size:28px; font-weight:bold; margin:10px 0; color:#00bfa5;"></div>
       <img id="qrPix" style="width:200px; height:200px; margin:10px auto; display:block; border: 1px solid #eee;" />
       
-      <p style="
-  margin: 10px 0 15px 0;
-  font-size: 15px;
-  color: #555;
-  line-height: 1.4;
-">
-  Após ler o QR Code e efetuar o pagamento, toque em
-  <strong>Pagamento Confirmado</strong>.
-</p>
-
+      <div id="pixChaveBox" class="pix-chave hidden">
+        <p style="margin: 10px 0 5px 0; font-size: 14px; color:#555;">
+          Ou pague pela chave PIX:
+        </p>
       
-      <button id="btnConfirmarPix" class="btn pix" style="width:100%; margin-top:10px;">CONFIRMAR</button>
+        <div style="
+          font-weight: bold;
+          font-size: 15px;
+          color: #00695c;
+          background: #f0fffc;
+          border: 1px dashed #00bfa5;
+          border-radius: 10px;
+          padding: 10px;
+          word-break: break-all;
+        ">
+          farahfelipe@gmail.com
+        </div>
+      </div>
+      
+
+
+      <div id="avisoPix" class="aviso-pix hidden"></div>
+      <button id="btnConfirmarPix" class="btn pix" style="width:100%; margin-top:10px;">CONFIRMAR PAGAMENTO</button>
       <button id="btnFecharPix" class="btn cancelar" style="width:100%; margin-top:10px;">VOLTAR</button>
     </div>
   </div>
