@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>PDV - Mini Market</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; user-select: none; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+    .hidden { display: none !important; }
+
+    /* TELAS */
+    .tela-cheia { position: fixed; inset: 0; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+    .topo { display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #eee; height: 80px; flex-shrink: 0; }
+    .logo { height: 50px; margin-right: 15px; cursor: pointer; }
+    .conteudo { flex: 1; display: flex; flex-direction: column; padding: 15px; overflow: hidden; }
+    
+    /* INPUTS E ITENS */
+    .leitura input { width: 100%; padding: 15px; font-size: 18px; border: 2px solid #00bfa5; border-radius: 8px; outline: none; }
+    .itens { flex: 1; overflow-y: auto; margin: 10px 0; background: #fff; border-radius: 8px; border: 1px solid #eee; }
+    .item { border-bottom: 1px solid #eee; padding: 12px; }
+    .item-topo { display: flex; justify-content: space-between; font-weight: bold; }
+    
+    /* FINANCEIRO */
+    .total { font-size: 32px; font-weight: bold; text-align: right; color: #00bfa5; padding: 10px 0; }
+    .acoes { display: flex; gap: 12px; padding-bottom: 10px; }
+    .btn { flex: 1; padding: 20px; font-size: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+    .pix { background: #00bfa5; color: white; }
+    .cancelar { background: #e0e0e0; color: #666; }
+
+    /* MODAIS */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 200; }
+    .modal-conteudo { background: white; padding: 25px; width: 95%; max-width: 550px; border-radius: 20px; text-align: center; max-height: 90vh; overflow-y: auto; }
+    .campo-admin { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 5px; }
+    
+    /* DASHBOARD */
+    .stats-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .stats-row { display: flex; justify-content: space-around; background: #f0f0f0; padding: 12px; border-radius: 10px; }
+    .stats-item { flex: 1; font-size: 14px; }
+    .stats-item b { font-size: 16px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <div id="telaInicial" class="tela-cheia">
+    <img src="logo.png" alt="Logo" style="max-width:200px; margin-bottom:20px; cursor:pointer;" id="logoAdmin" />
+    <h1>Bem-vindo ao Mini Market</h1>
+    <button id="btnIniciar" style="padding: 25px 50px; font-size: 24px; background: #00bfa5; color: white; border: none; border-radius: 50px; font-weight: bold; cursor:pointer;">INICIAR COMPRA</button>
+  </div>
+
+  <header id="cabecalho" class="topo hidden">
+    <img src="logo.png" alt="Logo" class="logo" />
+    <div class="titulo"><h1>Mini Market Clínica</h1><span id="hora"></span></div>
+  </header>
+
+  <main id="conteudoPrincipal" class="conteudo hidden">
+    <div class="leitura">
+      <input id="codigo" placeholder="Bipe o produto aqui" autofocus autocomplete="off" />
+    </div>
+    <div id="listaItens" class="itens"></div>
+    <div id="total" class="total">R$ 0,00</div>
+    <div class="acoes">
+      <button id="btnPix" class="btn pix">PAGAMENTO PIX</button>
+      <button id="btnCancelar" class="btn cancelar">CANCELAR</button>
+    </div>
+  </main>
+
+  <div id="modalPix" class="modal hidden">
+    <div class="modal-conteudo">
+      <h2>Pagamento PIX</h2>
+      <div id="valorPix" style="font-size:28px; font-weight:bold; margin:10px 0; color:#00bfa5;"></div>
+      <img id="qrPix" style="width:200px; height:200px; margin:10px auto; display:block;" />
+      <button id="btnConfirmarPix" class="btn pix" style="width:100%; margin-top:10px;">CONFIRMAR</button>
+      <button id="btnFecharPix" class="btn cancelar" style="width:100%; margin-top:10px;">VOLTAR</button>
+    </div>
+  </div>
+
+  <div id="modalAdmin" class="modal hidden">
+    <div class="modal-conteudo">
+      <h2>Painel Administrativo</h2>
+      
+      <div class="stats-container">
+        <div class="stats-row">
+          <div class="stats-item">Vendas Hoje:<br><b id="vendasHoje">R$ 0,00</b></div>
+          <div class="stats-item">Lucro Hoje:<br><b id="lucroHoje" style="color:green">R$ 0,00</b></div>
+        </div>
+        <div class="stats-row" style="background: #e3f2fd; border: 1px solid #bbdefb;">
+          <div class="stats-item">Vendas no Mês:<br><b id="vendasMes">R$ 0,00</b></div>
+          <div class="stats-item">Lucro no Mês:<br><b id="lucroMes" style="color:#1976d2">R$ 0,00</b></div>
+        </div>
+      </div>
+
+      <div style="text-align: left;">
+        <label>Código de Barras:</label>
+        <input type="text" id="cadCodigo" class="campo-admin">
+        <label>Nome do Produto:</label>
+        <input type="text" id="cadNome" class="campo-admin">
+        <label>Preço de Custo (Aquisição):</label>
+        <input type="number" id="cadCusto" class="campo-admin" step="0.01">
+        <label>Preço de Revenda (Venda):</label>
+        <input type="number" id="cadPreco" class="campo-admin" step="0.01">
+      </div>
+
+      <button id="btnSalvarProd" class="btn pix" style="width:100%;">SALVAR PRODUTO</button>
+      
+      <div style="border: 1px dashed #00bfa5; padding: 15px; margin: 15px 0; border-radius: 10px; background: #f9fffb;">
+        <p style="margin: 0 0 10px 0; font-weight: bold; font-size: 14px;">Importar Planilha (Excel CSV)</p>
+        <input type="file" id="arquivoCsv" accept=".csv" style="font-size: 12px; margin-bottom: 10px; width: 100%;">
+        <button id="btnImportarCsv" class="btn" style="background: #555; color: white; padding: 10px; font-size: 14px; width: 100%;">CARREGAR PRODUTOS</button>
+      </div>
+
+      <hr>
+      <button id="btnExportarCsv" class="btn" style="background:#217346; color:white; width:100%; margin-bottom:10px;">EXPORTAR VENDAS (EXCEL)</button>
+      <button id="btnFecharAdmin" class="btn cancelar" style="width:100%;">FECHAR</button>
+    </div>
+  </div>
+
+  <script>
+    const PIN_ADMIN = "2010";
+    const PIX_CHAVE = "farahfelipe@gmail.com";
+    const PIX_NOME = "FELIPE FARAH";
+    const PIX_CIDADE = "SAO PAULO";
+
+    let itens = [];
+    let produtos = JSON.parse(localStorage.getItem("market_produtos")) || {};
+    let historicoVendas = JSON.parse(localStorage.getItem("market_vendas")) || [];
+
+    function resetSistema() {
+      itens = [];
+      document.getElementById("total").innerText = "R$ 0,00";
+      document.getElementById("listaItens").innerHTML = "";
+      document.getElementById("telaInicial").classList.remove("hidden");
+      document.getElementById("cabecalho").classList.add("hidden");
+      document.getElementById("conteudoPrincipal").classList.add("hidden");
+      document.getElementById("modalPix").classList.add("hidden");
+    }
+
+    document.getElementById("btnIniciar").onclick = () => {
+      document.getElementById("telaInicial").classList.add("hidden");
+      document.getElementById("cabecalho").classList.remove("hidden");
+      document.getElementById("conteudoPrincipal").classList.remove("hidden");
+      document.getElementById("codigo").focus();
+    };
+
+    let clicks = 0;
+    document.getElementById("logoAdmin").onclick = () => {
+      clicks++;
+      if (clicks === 3) {
+        if (prompt("Digite o PIN:") === PIN_ADMIN) {
+          atualizarDashboard();
+          document.getElementById("modalAdmin").classList.remove("hidden");
+        }
+        clicks = 0;
+      }
+      setTimeout(() => clicks = 0, 2000);
+    };
+
+    document.getElementById("btnSalvarProd").onclick = () => {
+      const cod = document.getElementById("cadCodigo").value;
+      const nome = document.getElementById("cadNome").value;
+      const custo = parseFloat(document.getElementById("cadCusto").value);
+      const preco = parseFloat(document.getElementById("cadPreco").value);
+
+      if (cod && nome && custo && preco) {
+        produtos[cod] = { nome, custo, preco };
+        localStorage.setItem("market_produtos", JSON.stringify(produtos));
+        alert("Produto salvo!");
+        document.getElementById("cadCodigo").value = "";
+        document.getElementById("cadNome").value = "";
+        document.getElementById("cadCusto").value = "";
+        document.getElementById("cadPreco").value = "";
+      }
+    };
+
+    document.getElementById("btnImportarCsv").onclick = () => {
+      const input = document.getElementById("arquivoCsv");
+      const file = input.files[0];
+      if (!file) return alert("Selecione um arquivo CSV!");
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const linhas = e.target.result.split("\n");
+        let count = 0;
+        linhas.forEach((linha, i) => {
+          if (i === 0 || !linha.trim()) return;
+          const col = linha.split(";");
+          if (col.length >= 4) {
+            const cod = col[0].trim();
+            produtos[cod] = { 
+              nome: col[1].trim(), 
+              custo: parseFloat(col[2].replace(",", ".")), 
+              preco: parseFloat(col[3].replace(",", ".")) 
+            };
+            count++;
+          }
+        });
+        localStorage.setItem("market_produtos", JSON.stringify(produtos));
+        alert(count + " produtos importados!");
+        location.reload();
+      };
+      reader.readAsText(file);
+    };
+
+    document.getElementById("btnFecharAdmin").onclick = () => document.getElementById("modalAdmin").classList.add("hidden");
+
+    // --- PDV E VENDAS (AJUSTE DE DELAY PARA WINDOWS) ---
+    const inputCodigo = document.getElementById("codigo");
+
+    inputCodigo.addEventListener("keydown", function(e) {
+      if (e.keyCode === 13) { 
+        e.preventDefault(); 
+        // Espera 50ms para garantir que o Windows terminou de preencher o input
+        setTimeout(() => {
+          const cod = this.value.trim();
+          if (cod) {
+            if (produtos[cod]) {
+              const existente = itens.find(i => i.codigo === cod);
+              if (existente) existente.qtd++;
+              else itens.push({ codigo: cod, ...produtos[cod], qtd: 1 });
+              renderizar();
+            } else { 
+              alert("Produto (" + cod + ") não cadastrado!"); 
+            }
+          }
+          this.value = ""; 
+          this.focus();
+        }, 50);
+      }
+    });
+
+    document.addEventListener("click", () => {
+      const adminAberto = !document.getElementById("modalAdmin").classList.contains("hidden");
+      const pixAberto = !document.getElementById("modalPix").classList.contains("hidden");
+      const naTelaVenda = !document.getElementById("conteudoPrincipal").classList.contains("hidden");
+
+      if (!adminAberto && !pixAberto && naTelaVenda) {
+          inputCodigo.focus();
+      }
+    });
+
+    function renderizar() {
+      const lista = document.getElementById("listaItens");
+      lista.innerHTML = "";
+      let total = 0;
+      itens.forEach((item, idx) => {
+        total += item.preco * item.qtd;
+        lista.innerHTML += `
+          <div class="item">
+            <div class="item-topo"><span>${item.nome}</span><span>R$ ${(item.preco*item.qtd).toFixed(2)}</span></div>
+            <button onclick="alterar(${idx},-1)">-</button> ${item.qtd} <button onclick="alterar(${idx},1)">+</button>
+          </div>`;
+      });
+      document.getElementById("total").innerText = "R$ " + total.toFixed(2);
+    }
+
+    window.alterar = (i, d) => {
+      itens[i].qtd += d;
+      if (itens[i].qtd <= 0) itens.splice(i, 1);
+      renderizar();
+    };
+
+    document.getElementById("btnCancelar").onclick = () => { if(confirm("Cancelar?")) resetSistema(); };
+
+    document.getElementById("btnPix").onclick = () => {
+      if (!itens.length) return;
+      const total = itens.reduce((a, b) => a + (b.preco * b.qtd), 0);
+      document.getElementById("valorPix").innerText = "R$ " + total.toFixed(2);
+      const payload = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
+      document.getElementById("qrPix").src = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(payload);
+      document.getElementById("modalPix").classList.remove("hidden");
+    };
+
+    document.getElementById("btnConfirmarPix").onclick = () => {
+      const vTotal = itens.reduce((a, b) => a + (b.preco * b.qtd), 0);
+      const cTotal = itens.reduce((a, b) => a + (b.custo * b.qtd), 0);
+      historicoVendas.push({ data: new Date().toISOString(), valor: vTotal, lucro: vTotal - cTotal });
+      localStorage.setItem("market_vendas", JSON.stringify(historicoVendas));
+      alert("Vendido!");
+      resetSistema();
+    };
+
+    document.getElementById("btnFecharPix").onclick = () => document.getElementById("modalPix").classList.add("hidden");
+
+    function atualizarDashboard() {
+      const agora = new Date();
+      const hojeStr = agora.toLocaleDateString();
+      const mesAtual = agora.getMonth();
+      const anoAtual = agora.getFullYear();
+
+      const vendasHojeArr = historicoVendas.filter(v => new Date(v.data).toLocaleDateString() === hojeStr);
+      const totalVendasHoje = vendasHojeArr.reduce((a, b) => a + b.valor, 0);
+      const totalLucroHoje = vendasHojeArr.reduce((a, b) => a + (b.lucro || 0), 0);
+
+      const vendasMesArr = historicoVendas.filter(v => {
+        const d = new Date(v.data);
+        return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+      });
+      const totalVendasMes = vendasMesArr.reduce((a, b) => a + b.valor, 0);
+      const totalLucroMes = vendasMesArr.reduce((a, b) => a + (b.lucro || 0), 0);
+
+      document.getElementById("vendasHoje").innerText = "R$ " + totalVendasHoje.toFixed(2);
+      document.getElementById("lucroHoje").innerText = "R$ " + totalLucroHoje.toFixed(2);
+      document.getElementById("vendasMes").innerText = "R$ " + totalVendasMes.toFixed(2);
+      document.getElementById("lucroMes").innerText = "R$ " + totalLucroMes.toFixed(2);
+    }
+
+    document.getElementById("btnExportarCsv").onclick = () => {
+      let csv = "Data;Valor;Lucro\n";
+      historicoVendas.forEach(v => csv += `${new Date(v.data).toLocaleString()};${v.valor.toFixed(2)};${(v.lucro||0).toFixed(2)}\n`);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'vendas.csv';
+      a.click();
+    };
+
+    function gerarPayloadPix(chave, nome, cidade, valor) {
+      const f = (id, v) => id + String(v.length).padStart(2, '0') + v;
+      let p = f("00", "01") + f("26", f("00", "br.gov.bcb.pix") + f("01", chave)) + f("52", "0000") + f("53", "986") + f("54", valor.toFixed(2)) + f("58", "BR") + f("59", nome) + f("60", cidade) + f("62", f("05", "***")) + "6304";
+      return p + crc16(p);
+    }
+    function crc16(data) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < data.length; i++) {
+        crc ^= data.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+          if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021;
+          else crc <<= 1;
+        }
+      }
+      return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    setInterval(() => { document.getElementById("hora").innerText = new Date().toLocaleTimeString(); }, 1000);
+  </script>
+</body>
+</html>

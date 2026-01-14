@@ -1,0 +1,147 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== BASE PARA SAMSUNG TAB A & IPAD ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%; /* Fundamental para não cortar no tablet */
+  background: #ffffff;
+  color: #222;
+  overflow: hidden; /* Trava o scroll da página inteira */
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ===== TELA INICIAL (DEVE FICAR ACIMA DE TUDO NO RESET) ===== */
+.tela-cheia {
+  position: fixed;
+  inset: 0;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999 !important; /* Força ficar em cima no Tab A */
+  text-align: center;
+  padding: 20px;
+}
+
+.logo-grande {
+  max-width: 200px;
+  margin-bottom: 20px;
+}
+
+.btn-iniciar {
+  padding: 30px 60px;
+  font-size: 28px;
+  background: #00bfa5;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 10px 20px rgba(0,191,165,0.3);
+  touch-action: manipulation;
+  -webkit-appearance: none;
+}
+
+/* ===== APP (TOPO E CONTEUDO) ===== */
+.topo {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid #eee;
+  height: 80px;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.logo {
+  height: 50px;
+  margin-right: 15px;
+}
+
+.titulo h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.conteudo {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  overflow: hidden;
+}
+
+/* ===== LISTA DE ITENS (ESTICA PARA PREENCHER TELA) ===== */
+.itens {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ===== AÇÕES E BOTÕES (FIXOS NO RODAPÉ) ===== */
+.total {
+  flex-shrink: 0;
+  font-size: 28px;
+  font-weight: bold;
+  text-align: right;
+  padding: 10px 0;
+  color: #00bfa5;
+  background: #fff;
+}
+
+.acoes {
+  flex-shrink: 0;
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  background: #fff;
+  padding-bottom: env(safe-area-inset-bottom); /* Respeita bordas do tablet */
+}
+
+.btn {
+  flex: 1;
+  padding: 18px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-appearance: none;
+}
+
+.pix { background: #00bfa5; color: white; }
+.cancelar { background: #e0e0e0; color: #666; }
+
+/* ===== MODAL ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200; /* Sempre no topo de tudo */
+}

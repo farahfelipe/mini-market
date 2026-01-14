@@ -1,0 +1,313 @@
+// ===== DADOS PIX =====
+const PIX_CHAVE = "farahfelipe@gmail.com";
+const PIX_NOME = "FELIPE FARAH"; 
+const PIX_CIDADE = "SAO PAULO";   
+
+// ===== CONFIGURAÇÃO DE SEGURANÇA =====
+const PIN_ADMIN = "2010"; 
+
+// ===== ELEMENTOS =====
+const telaInicial = document.getElementById("telaInicial");
+const btnIniciar = document.getElementById("btnIniciar");
+const logoAdmin = document.getElementById("logoAdmin");
+const cabecalho = document.querySelector(".topo");
+const conteudoPrincipal = document.querySelector(".conteudo");
+const codigoInput = document.getElementById("codigo");
+const listaItens = document.getElementById("listaItens");
+const totalEl = document.getElementById("total");
+const horaEl = document.getElementById("hora");
+const modalPix = document.getElementById("modalPix");
+const valorPix = document.getElementById("valorPix");
+const qrPix = document.getElementById("qrPix");
+
+// Elementos Cadastro
+const modalCadastro = document.getElementById("modalCadastro");
+const cadCodigo = document.getElementById("cadCodigo");
+const cadNome = document.getElementById("cadNome");
+const cadPreco = document.getElementById("cadPreco");
+const btnSalvarProd = document.getElementById("btnSalvarProd");
+const btnFecharCad = document.getElementById("btnFecharCad");
+
+// Elementos Backup
+const btnExportar = document.getElementById("btnExportar");
+const btnImportar = document.getElementById("btnImportar");
+const fileInput = document.getElementById("fileInput");
+
+// Elementos Relatório
+const vendasHojeEl = document.getElementById("vendasHoje");
+const vendasMesEl = document.getElementById("vendasMes");
+const btnLimparVendas = document.getElementById("btnLimparVendas");
+const btnExportarExcel = document.getElementById("btnExportarExcel");
+
+let itens = [];
+let audioCtx = null;
+let produtos = JSON.parse(localStorage.getItem('market_produtos')) || {};
+let historicoVendas = JSON.parse(localStorage.getItem('market_vendas')) || [];
+
+// ===== FUNÇÃO DO SOM (Ajustada para iOS) =====
+function tocarBip() {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch (e) {
+        console.log("Erro ao tocar som:", e);
+    }
+}
+
+// ===== LÓGICA DE RELATÓRIOS =====
+function atualizarInterfaceRelatorio() {
+    const agora = new Date();
+    const hoje = agora.toLocaleDateString('pt-BR');
+    const mesAno = agora.getMonth() + "-" + agora.getFullYear();
+
+    const totalHoje = historicoVendas
+        .filter(v => new Date(v.data).toLocaleDateString('pt-BR') === hoje)
+        .reduce((acc, v) => acc + v.valor, 0);
+
+    const totalMes = historicoVendas
+        .filter(v => {
+            const d = new Date(v.data);
+            return (d.getMonth() + "-" + d.getFullYear()) === mesAno;
+        })
+        .reduce((acc, v) => acc + v.valor, 0);
+
+    vendasHojeEl.textContent = `R$ ${totalHoje.toFixed(2)}`;
+    vendasMesEl.textContent = `R$ ${totalMes.toFixed(2)}`;
+}
+
+btnExportarExcel.onclick = () => {
+    if (historicoVendas.length === 0) {
+        alert("Não há histórico de vendas para exportar.");
+        return;
+    }
+    let csvContent = "data:text/csv;charset=utf-8,Data;Hora;Valor Total\n";
+    historicoVendas.forEach(v => {
+        const d = new Date(v.data);
+        const dataFormatada = d.toLocaleDateString('pt-BR');
+        const horaFormatada = d.toLocaleTimeString('pt-BR');
+        const valorFormatado = v.valor.toFixed(2).replace('.', ',');
+        csvContent += `${dataFormatada};${horaFormatada};${valorFormatado}\n`;
+    });
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `relatorio_vendas.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+btnLimparVendas.onclick = () => {
+    if(confirm("Deseja zerar todo o histórico de faturamento?")) {
+        historicoVendas = [];
+        localStorage.setItem('market_vendas', JSON.stringify(historicoVendas));
+        atualizarInterfaceRelatorio();
+    }
+};
+
+// ===== LÓGICA ADMIN (PIN) =====
+let clicksLogo = 0;
+logoAdmin.onclick = () => {
+    clicksLogo++;
+    if(clicksLogo === 3) { 
+        const pinDigitado = prompt("Digite o PIN de Administrador:");
+        if(pinDigitado === PIN_ADMIN) {
+            atualizarInterfaceRelatorio();
+            modalCadastro.classList.remove("hidden");
+            setTimeout(() => cadCodigo.focus(), 500);
+        } else if (pinDigitado !== null) {
+            alert("PIN Incorreto!");
+        }
+        clicksLogo = 0;
+    }
+    setTimeout(() => clicksLogo = 0, 2000);
+};
+
+btnSalvarProd.onclick = () => {
+    const cod = cadCodigo.value.trim();
+    const nome = cadNome.value.trim();
+    const preco = parseFloat(cadPreco.value);
+    if(cod && nome && preco) {
+        produtos[cod] = { nome, preco };
+        localStorage.setItem('market_produtos', JSON.stringify(produtos));
+        alert("Produto salvo!");
+        cadCodigo.value = ""; cadNome.value = ""; cadPreco.value = "";
+        cadCodigo.focus();
+    }
+};
+
+btnFecharCad.onclick = () => modalCadastro.classList.add("hidden");
+
+// ===== BACKUP =====
+if(btnExportar) {
+    btnExportar.onclick = () => {
+        const dataStr = JSON.stringify(produtos, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `backup_market.json`;
+        link.click();
+    };
+}
+
+btnImportar.onclick = () => fileInput.click();
+fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            produtos = JSON.parse(event.target.result);
+            localStorage.setItem('market_produtos', JSON.stringify(produtos));
+            alert("Backup restaurado!");
+            location.reload();
+        } catch(err) { alert("Arquivo inválido"); }
+    };
+    reader.readAsText(file);
+};
+
+// ===== CONTROLE DE TELAS (Ajustado para iPad) =====
+btnIniciar.onclick = function() {
+    // 1. Desbloqueia o áudio imediatamente no iOS
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // 2. Troca de telas
+    telaInicial.classList.add("hidden");
+    cabecalho.classList.remove("hidden");
+    conteudoPrincipal.classList.remove("hidden");
+
+    // 3. Foco no input (delay necessário para iPad)
+    setTimeout(() => {
+        codigoInput.focus();
+    }, 600);
+};
+
+function voltarParaInicio() {
+    itens = [];
+    render();
+    telaInicial.classList.remove("hidden");
+    cabecalho.classList.add("hidden");
+    conteudoPrincipal.classList.add("hidden");
+}
+
+setInterval(() => {
+  horaEl.textContent = new Date().toLocaleTimeString('pt-BR');
+}, 1000);
+
+// ===== LEITURA NO PDV =====
+codigoInput.addEventListener("change", () => {
+  const codigo = codigoInput.value.trim();
+  codigoInput.value = "";
+  if (!produtos[codigo]) {
+      alert("Não cadastrado: " + codigo);
+      return;
+  }
+  tocarBip();
+  const item = itens.find(i => i.codigo === codigo);
+  if (item) item.qtd++;
+  else itens.push({ codigo, ...produtos[codigo], qtd: 1 });
+  render();
+});
+
+function render() {
+  listaItens.innerHTML = "";
+  let total = 0;
+  itens.forEach((item, index) => {
+    total += item.preco * item.qtd;
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="item-topo">
+        <span>${item.nome}</span>
+        <span>R$ ${(item.preco * item.qtd).toFixed(2)}</span>
+      </div>
+      <div class="controles">
+        <button onclick="alterarQtd(${index}, -1)">−</button>
+        <strong style="margin: 0 15px">${item.qtd}</strong>
+        <button onclick="alterarQtd(${index}, 1)">+</button>
+        <span class="remover" onclick="removerItem(${index})">🗑️</span>
+      </div>
+    `;
+    listaItens.appendChild(div);
+  });
+  totalEl.textContent = `R$ ${total.toFixed(2)}`;
+}
+
+window.alterarQtd = function(i, d) {
+  itens[i].qtd += d;
+  if (itens[i].qtd <= 0) itens.splice(i, 1);
+  render();
+};
+
+window.removerItem = function(i) {
+  itens.splice(i, 1);
+  render();
+};
+
+// ===== PIX =====
+function gerarPayloadPix(chave, nome, cidade, valor) {
+    const format = (id, valor) => id + String(valor.length).padStart(2, '0') + valor;
+    const gui = "br.gov.bcb.pix";
+    const valorStr = valor.toFixed(2);
+    let payload = format("00", "01") + 
+                  format("26", format("00", gui) + format("01", chave)) +
+                  format("52", "0000") + format("53", "986") +
+                  format("54", valorStr) + format("58", "BR") +
+                  format("59", nome.substring(0, 25)) +
+                  format("60", cidade.substring(0, 15)) +
+                  format("62", format("05", "***"));
+    return payload + "6304"; 
+}
+
+function crc16(data) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < data.length; i++) {
+        crc ^= data.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+            if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021;
+            else crc <<= 1;
+        }
+    }
+    return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+}
+
+document.getElementById("btnPix").onclick = () => {
+  if (itens.length === 0) return;
+  const total = itens.reduce((s, i) => s + i.preco * i.qtd, 0);
+  valorPix.textContent = `R$ ${total.toFixed(2)}`;
+  const payloadSemCRC = gerarPayloadPix(PIX_CHAVE, PIX_NOME, PIX_CIDADE, total);
+  const pixCodigoFinal = payloadSemCRC + crc16(payloadSemCRC);
+  qrPix.src = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(pixCodigoFinal);
+  modalPix.classList.remove("hidden");
+};
+
+document.getElementById("btnFecharPix").onclick = () => modalPix.classList.add("hidden");
+
+document.getElementById("btnConfirmarPix").onclick = () => {
+  const totalVenda = itens.reduce((s, i) => s + i.preco * i.qtd, 0);
+  historicoVendas.push({ data: new Date().toISOString(), valor: totalVenda });
+  localStorage.setItem('market_vendas', JSON.stringify(historicoVendas));
+  alert("Pagamento confirmado!");
+  voltarParaInicio();
+  modalPix.classList.add("hidden");
+};
+
+document.getElementById("btnCancelar").onclick = () => {
+  if (confirm("Deseja cancelar a compra?")) voltarParaInicio();
+};
